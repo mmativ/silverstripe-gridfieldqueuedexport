@@ -62,7 +62,7 @@ class GenerateCSVJob extends AbstractQueuedJob {
         $this->GridFieldName = $gridField->getName();
         $this->GridFieldURL = $gridField->Link();
         $this->totalSteps = $gridField->getManipulatedList()->count();
-        $this->FilterParams = Controller::curr()->getRequest()->postVar('filters');
+        $this->FilterParams = Controller::curr()->getRequest()->postVar('q');
     }
 
     /**
