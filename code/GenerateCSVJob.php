@@ -55,14 +55,10 @@ class GenerateCSVJob extends AbstractQueuedJob {
     /**
      * @param GridField $gridField
      */
-    function setGridField(GridField $gridField) {
-        $gridField->getConfig()->removeComponentsByType('GridFieldPaginator');
-        $gridField->getConfig()->removeComponentsByType('GridFieldPageCount');
-        
+    function setGridField(GridField $gridField) {        
         $this->GridFieldName = $gridField->getName();
         $this->GridFieldURL = $gridField->Link();
-        $this->totalSteps = $gridField->getManipulatedList()->count();
-        $this->FilterParams = Controller::curr()->getRequest()->postVar('filters');
+        $this->FilterParams = Controller::curr()->getRequest()->postVar('q');
     }
 
     /**
@@ -154,8 +150,8 @@ class GenerateCSVJob extends AbstractQueuedJob {
         // Great, it did, we can return it
         if ($res instanceof GridFieldQueuedExportButton_Response) {
             $gridField = $res->getGridField();
-            $gridField->getConfig()->removeComponentsByType('GridFieldPaginator');
-            $gridField->getConfig()->removeComponentsByType('GridFieldPageCount');
+            $gridField->getConfig()->removeComponentsByType(GridFieldPaginator::class);
+            $gridField->getConfig()->removeComponentsByType(GridFieldPageCount::class);
 
             $filterParams = $this->FilterParams;
             if (is_array($filterParams)){
