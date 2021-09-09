@@ -13,7 +13,8 @@
  * Relies on GridField being accessible in its original CMS controller context to the user
  * who triggered the export.
  */
-class GenerateCSVJob extends AbstractQueuedJob {
+class GenerateCSVJob extends AbstractQueuedJob
+{
 
     /**
      * Optionally define the number of seconds to wait after the job has finished before marking it as complete.
@@ -24,7 +25,8 @@ class GenerateCSVJob extends AbstractQueuedJob {
      */
     private static $sync_sleep_seconds = 0;
 
-    public function __construct() {
+    public function __construct()
+    {
         $this->ID = Injector::inst()->create('RandomGenerator')->randomToken('sha1');
         $this->Seperator = ',';
         $this->IncludeHeader = true;
@@ -35,27 +37,31 @@ class GenerateCSVJob extends AbstractQueuedJob {
     /**
      * @return string
      */
-    public function getJobType() {
+    public function getJobType()
+    {
         return QueuedJob::QUEUED;
     }
 
     /**
      * @return string
      */
-    public function getTitle() {
+    public function getTitle()
+    {
         return "Export a CSV of a Gridfield";
     }
 
     /**
      * @return string
      */
-    public function getSignature() {
+    public function getSignature()
+    {
         return md5(get_class($this) . '-' . $this->ID);
     }
     /**
      * @param GridField $gridField
      */
-    function setGridField(GridField $gridField) {        
+    function setGridField(GridField $gridField)
+    {
         $this->GridFieldName = $gridField->getName();
         $this->GridFieldURL = $gridField->Link();
         $this->FilterParams = Controller::curr()->getRequest()->postVar('q');
@@ -64,7 +70,8 @@ class GenerateCSVJob extends AbstractQueuedJob {
     /**
      * @param $session
      */
-    function setSession($session) {
+    function setSession($session)
+    {
         // None of the gridfield actions are needed, and they make the stored session bigger, so pull
         // them out.
         $actionkeys = array_filter(array_keys($session), function ($i) {
@@ -79,19 +86,23 @@ class GenerateCSVJob extends AbstractQueuedJob {
         $this->Session = $session;
     }
 
-    function setColumns($columns) {
+    function setColumns($columns)
+    {
         $this->Columns = $columns;
     }
 
-    function setSeparator($seperator) {
+    function setSeparator($seperator)
+    {
         $this->Separator = $seperator;
     }
 
-    function setIncludeHeader($includeHeader) {
+    function setIncludeHeader($includeHeader)
+    {
         $this->IncludeHeader = $includeHeader;
     }
 
-    protected function getOutputPath() {
+    protected function getOutputPath()
+    {
         $base = ASSETS_PATH . '/.exports';
         if (!is_dir($base)) mkdir($base, 0770, true);
 
@@ -101,17 +112,18 @@ class GenerateCSVJob extends AbstractQueuedJob {
             file_put_contents("$base/.htaccess", "Deny from all\nRewriteRule .* - [F]\n");
         }
 
-        $folder = $base.'/'.$this->getSignature();
+        $folder = $base . '/' . $this->getSignature();
         if (!is_dir($folder)) mkdir($folder, 0770, true);
 
-        return $folder.'/'.$this->getSignature().'.csv';
+        return $folder . '/' . $this->getSignature() . '.csv';
     }
 
     /**
      * @return GridField
      * @throws SS_HTTPResponse_Exception
      */
-    protected function getGridField() {
+    protected function getGridField()
+    {
         $session = $this->Session;
 
         // Store state in session, and pass ID to client side.
@@ -138,7 +150,7 @@ class GenerateCSVJob extends AbstractQueuedJob {
 
         $url = Controller::join_links(
             $this->GridFieldURL,
-            '?' .http_build_query([$actionKey => $actionValue, 'SecurityID' => $token])
+            '?' . http_build_query([$actionKey => $actionValue, 'SecurityID' => $token])
         );
 
         // Restore into the current session the user the job is exporting as
@@ -154,7 +166,7 @@ class GenerateCSVJob extends AbstractQueuedJob {
             $gridField->getConfig()->removeComponentsByType(GridFieldPageCount::class);
 
             $filterParams = $this->FilterParams;
-            if (is_array($filterParams)){
+            if (is_array($filterParams)) {
                 foreach ($filterParams as $key => $param) {
                     if ($param == '') {
                         unset($filterParams[$key]);
@@ -163,7 +175,7 @@ class GenerateCSVJob extends AbstractQueuedJob {
                 $list = $gridField->getList();
                 $gridField->setList($list->Filter($filterParams));
             }
-            
+
             return $gridField;
         } else {
             user_error('Couldn\'t restore GridField', E_USER_ERROR);
@@ -174,7 +186,8 @@ class GenerateCSVJob extends AbstractQueuedJob {
      * @param $gridField
      * @param $columns
      */
-    protected function outputHeader($gridField, $columns) {
+    protected function outputHeader($gridField, $columns)
+    {
         $fileData = '';
         $separator = $this->Separator;
 
@@ -200,7 +213,8 @@ class GenerateCSVJob extends AbstractQueuedJob {
      * @param int $start
      * @param int $count
      */
-    protected function outputRows(GridField $gridField, $columns, $start, $count) {
+    protected function outputRows(GridField $gridField, $columns, $start, $count)
+    {
         $fileData = '';
         $separator = $this->Separator;
 
@@ -244,7 +258,8 @@ class GenerateCSVJob extends AbstractQueuedJob {
         file_put_contents($this->getOutputPath(), $fileData, FILE_APPEND);
     }
 
-    public function setup() {
+    public function setup()
+    {
         $gridField = $this->getGridField();
         $this->totalSteps = $gridField->getManipulatedList()->count();
     }
@@ -255,12 +270,13 @@ class GenerateCSVJob extends AbstractQueuedJob {
      * @param GridField $gridField
      * @return array
      */
-    public function process() {
+    public function process()
+    {
         $gridField = $this->getGridField();
-        
-        if($this->Columns) {
+
+        if ($this->Columns) {
             $columns = $this->Columns;
-        } else if($dataCols = $gridField->getConfig()->getComponentByType('GridFieldDataColumns')) {
+        } else if ($dataCols = $gridField->getConfig()->getComponentByType('GridFieldDataColumns')) {
             $columns = $dataCols->getDisplayFields($gridField);
         } else {
             $columns = singleton($gridField->getModelClass())->summaryFields();
