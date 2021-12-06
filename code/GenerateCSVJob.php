@@ -148,9 +148,18 @@ class GenerateCSVJob extends AbstractQueuedJob
         $actionKey = 'action_gridFieldAlterAction?' . http_build_query(['StateID' => $id]);
         $actionValue = 'Find Gridfield';
 
+        $queryParams = [$actionKey => $actionValue, 'SecurityID' => $token];
+
+        // Get the filters and assign to the url as a get parameter
+        if (is_array($this->FilterParams) && count($this->FilterParams)) {
+            foreach ($this->FilterParams as $filter => $value) {
+                $queryParams['q'][$filter] = $value;
+            }
+        }
+
         $url = Controller::join_links(
             $this->GridFieldURL,
-            '?' . http_build_query([$actionKey => $actionValue, 'SecurityID' => $token])
+            '?' . http_build_query($queryParams)
         );
 
         // Restore into the current session the user the job is exporting as
@@ -162,19 +171,8 @@ class GenerateCSVJob extends AbstractQueuedJob
         // Great, it did, we can return it
         if ($res instanceof GridFieldQueuedExportButton_Response) {
             $gridField = $res->getGridField();
-            $gridField->getConfig()->removeComponentsByType(GridFieldPaginator::class);
-            $gridField->getConfig()->removeComponentsByType(GridFieldPageCount::class);
-
-            $filterParams = $this->FilterParams;
-            if (is_array($filterParams)) {
-                foreach ($filterParams as $key => $param) {
-                    if ($param == '') {
-                        unset($filterParams[$key]);
-                    }
-                }
-                $list = $gridField->getList();
-                $gridField->setList($list->Filter($filterParams));
-            }
+            $gridField->getConfig()->removeComponentsByType('GridFieldPaginator');
+            $gridField->getConfig()->removeComponentsByType('GridFieldPageCount');
 
             return $gridField;
         } else {
