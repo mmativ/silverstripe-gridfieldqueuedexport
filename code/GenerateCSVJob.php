@@ -64,6 +64,8 @@ class GenerateCSVJob extends AbstractQueuedJob
     {
         $this->GridFieldName = $gridField->getName();
         $this->GridFieldURL = $gridField->Link();
+        $this->GridFieldState = $gridField->getState()->toArray();
+        $this->totalSteps = $gridField->getManipulatedList()->count();
         $this->FilterParams = Controller::curr()->getRequest()->postVar('q');
     }
 
@@ -173,6 +175,9 @@ class GenerateCSVJob extends AbstractQueuedJob
             $gridField = $res->getGridField();
             $gridField->getConfig()->removeComponentsByType('GridFieldPaginator');
             $gridField->getConfig()->removeComponentsByType('GridFieldPageCount');
+
+            $state = $gridField->getState(false);
+            $state->setValue(json_encode($this->GridFieldState));
 
             return $gridField;
         } else {
